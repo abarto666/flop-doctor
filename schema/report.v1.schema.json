@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "flop-doctor report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "tool", "network", "command", "generated_at", "duration_ms", "budget_ms", "redacted", "status", "exit_code", "fingerprint", "summary", "checks", "sources"],
+  "properties": {
+    "schema": { "const": "flop-doctor/report/v1" },
+    "tool": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": { "name": { "const": "flop-doctor" }, "version": { "const": "1.0.0" } }
+    },
+    "network": { "type": "string", "minLength": 1 },
+    "command": { "enum": ["net", "market", "miner", "check"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "duration_ms": { "$ref": "#/$defs/nonnegative" },
+    "budget_ms": { "type": "integer", "minimum": 5000, "maximum": 120000 },
+    "redacted": { "type": "boolean" },
+    "status": { "$ref": "#/$defs/status" },
+    "exit_code": { "enum": [0, 1, 2, 3] },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pass", "warn", "fail", "unknown"],
+      "properties": {
+        "pass": { "$ref": "#/$defs/nonnegative" }, "warn": { "$ref": "#/$defs/nonnegative" },
+        "fail": { "$ref": "#/$defs/nonnegative" }, "unknown": { "$ref": "#/$defs/nonnegative" }
+      }
+    },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+    "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } }
+  },
+  "$defs": {
+    "nonnegative": { "type": "integer", "minimum": 0 },
+    "status": { "enum": ["pass", "warn", "fail", "unknown"] },
+    "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{16}$" },
+    "scalar": { "type": ["string", "number", "boolean", "null"] },
+    "check": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "group", "subject", "status", "cause_class", "reason", "message", "evidence", "fingerprint"],
+      "properties": {
+        "id": { "enum": [
+          "net.explorer.reachable", "net.explorer.index_lag", "net.rpc.reachable", "net.rpc.syncing", "net.rpc.finality", "net.rpc.state_probe",
+          "net.genesis.consistent", "net.gateway.reachable", "net.gateway.syncing", "net.faucet.reachable", "net.releases.reachable",
+          "market.models.listed", "market.offers.present", "market.catalog_offer_overlap", "market.model.has_offer", "market.model.capacity", "market.faucet.cap", "market.sponsor.slots",
+          "miner.registered", "miner.active", "miner.blacklist", "miner.strikes", "miner.slash", "miner.stake", "miner.worker_build", "miner.calibration.state",
+          "miner.calibration.expiry", "miner.balance.fee", "miner.offer.published", "miner.offer.model_known", "miner.reliability", "miner.channels.timedout",
+          "endpoint.dns", "endpoint.tls", "endpoint.session_info"
+        ] },
+        "group": { "enum": ["net", "market", "miner", "endpoint"] },
+        "subject": { "type": ["string", "null"] },
+        "status": { "$ref": "#/$defs/status" },
+        "cause_class": { "enum": ["none", "upstream", "market", "operator", "local", "schema", "budget", "internal"] },
+        "reason": { "enum": [
+          "ok", "budget_exhausted", "check_crashed", "timeout", "transport", "http_3xx", "http_4xx", "http_5xx", "bad_json", "rpc_error", "schema",
+          "src_timeout", "src_transport", "src_http_3xx", "src_http_4xx", "src_http_5xx", "src_bad_json", "src_rpc_error", "src_schema",
+          "not_connected", "lagging", "stalled", "syncing", "finality_lag", "finality_stalled", "bad_metadata", "partial", "mismatch", "unexpected_genesis",
+          "insufficient_sources", "empty_catalog", "no_valid_offers", "disjoint_truncated", "disjoint", "no_offer", "no_offer_truncated", "not_in_catalog",
+          "no_capacity", "cap_exhausted", "closed", "full", "not_registered", "inactive", "blacklisted", "has_strikes", "slashed", "no_stake", "no_build_info",
+          "outdated", "below_minimum", "no_calibration", "prunable", "expiring", "expired_or_imminent", "low", "not_live", "insufficient", "offer_invalid",
+          "offers_truncated", "unknown_model", "incidents", "fraud", "ghost_failing", "timeouts", "timedout", "mostly_timedout", "ip_literal", "tailscale_domain",
+          "no_records", "private_address", "resolver_error", "fake_ip_suspected", "skipped_dns", "untrusted", "handshake_failed", "redirect",
+          "unauthenticated_access", "unexpected_status", "unreachable"
+        ] },
+        "message": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "type": "object", "additionalProperties": { "anyOf": [
+            { "$ref": "#/$defs/scalar" }, { "type": "array", "items": { "$ref": "#/$defs/scalar" } }
+          ] }
+        },
+        "fingerprint": { "$ref": "#/$defs/fingerprint" }
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "url", "ok", "failure", "http_status", "elapsed_ms"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "ok": { "type": "boolean" },
+        "failure": { "enum": [null, "timeout", "transport", "http_3xx", "http_4xx", "http_5xx", "bad_json", "rpc_error", "schema"] },
+        "http_status": { "type": ["integer", "null"], "minimum": 100, "maximum": 599 },
+        "elapsed_ms": { "$ref": "#/$defs/nonnegative" }
+      }
+    }
+  }
+}

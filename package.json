@@ -1,0 +1,11 @@
+{
+  "name": "flop-doctor",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "bin": { "flop-doctor": "bin/flop-doctor.mjs" },
+  "scripts": { "test": "node --test" },
+  "dependencies": {},
+  "devDependencies": {}
+}
